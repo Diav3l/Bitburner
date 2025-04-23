@@ -34,6 +34,8 @@ export async function main(ns) {
 		}
 		ns.tprint('Compleeted upgrade for '+ Math.pow(2,currentUpgrade)+'GB, Teir ' + currentUpgrade);
 		currentUpgrade++;
+		income = ns.getTotalScriptIncome();
+		reserveCash = Math.round((income[0]+hacknetProduction(ns))*100);
 	}
 	ns.tprint('Servers fully upgraded');
 }
