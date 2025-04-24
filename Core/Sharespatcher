@@ -1,0 +1,84 @@
+let shareRam = 4;
+let waitTime = 10010;
+/** @param {NS} ns */
+export async function main(ns) {
+  let masterHosts = await listAllHosts(ns, "home");
+
+  var zombies = getZombies(ns, masterHosts)
+
+
+  while (true) {
+    for(let i=0; i < zombies.length; i++){
+      let currentHost = zombies[i]
+      pushFiles(ns, currentHost);
+      let shareThreads = getShareThreads(ns, currentHost);
+      if(shareThreads < 1)
+        continue;
+
+      ns.exec('SimpleScripts/Share.js', currentHost, shareThreads);
+
+    }
+    zombies = getZombies(ns, masterHosts)
+    await ns.sleep(waitTime)
+  }
+}
+
+function getShareThreads(ns, currentHost){
+  let availRam = ns.getServerMaxRam(currentHost) - ns.getServerUsedRam(currentHost);
+  let maxThreads = Math.floor(availRam / shareRam);
+  return(maxThreads);
+}
+/**
+ * Copies the share script to the provided host name.
+ * 
+ * @param {NS} ns
+ * @param {String} current
+ */
+function pushFiles(ns, current) {
+  if (!ns.fileExists('SimpleScripts/Share.js', current))
+    ns.scp('SimpleScripts/Share.js', current, 'home');
+}
+/**
+ * Get list of all servers that I have control of and arent my servers
+ * 
+ * @param {NS} ns
+ * @param {String[]} masterHosts
+ * 
+ */
+export function getZombies(ns, masterHosts) {
+  let zombies = [];
+  for (let i = 0; i < masterHosts.length; i++) {
+    if (masterHosts[i].includes('Diavel') || masterHosts[i].includes('home'))
+      continue;
+    if (ns.hasRootAccess(masterHosts[i]))
+      zombies.push(masterHosts[i]);
+  }
+  return zombies;
+}
+
+/**
+ *  Get listing of all hosts on the network.
+ *  This function was not writen by me.
+ *
+ *  @param {NS} ns
+ *  @param {string} rootHost
+ *  @param {Set} found
+**/
+export async function listAllHosts(ns, rootHost, found) {
+  if (!found) {
+    found = new Set([])
+  }
+
+  const hosts = new Set(ns.scan(rootHost));
+
+  for (const host of hosts) {
+    if (!found.has(host)) {
+      found.add(host);
+      for (const child of await listAllHosts(ns, host, found)) {
+        found.add(child)
+      }
+    }
+  }
+  // Convert final result back to an array
+  return [...found];
+}
