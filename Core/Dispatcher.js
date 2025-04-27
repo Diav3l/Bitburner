@@ -28,10 +28,8 @@ export async function main(ns) {
         let growThreads = getGrowThreads(ns, availRam, growRam, current);
         let hackThreads = getHackThreads(ns, availRam, hackRam, current);
         const timeMax = 300000
-        if (ns.getWeakenTime(current) > timeMax || ns.getGrowTime(current) > timeMax || ns.getHackTime(current) > timeMax){
-          ns.tprint("did to act on" + current + "due to time requirments");
+        if (ns.getWeakenTime(current) > timeMax || ns.getGrowTime(current) > timeMax || ns.getHackTime(current) > timeMax)
           continue;
-        }
 
         if (Math.floor(ns.getServerSecurityLevel(current)) > ns.getServerMinSecurityLevel(current) && !checkRunning(ns, hosts, current) && weakenThreads > 0) {
           ns.print('Weakening ' + current + ' with ' + weakenThreads + ' threads' + ' on ' + currentHost)
