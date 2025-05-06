@@ -21,9 +21,9 @@ export async function main(ns) {
         continue;
 
       /**Iterates through all targets*/
-      for (let i = 0; i < targets.length; i++) {
+      for (let x = 0; x < targets.length; x++) {
 
-        let current = targets[i];
+        let current = targets[x];
         let weakenThreads = getWeakenThreads(ns, availRam, weakenRam, current);
         let growThreads = getGrowThreads(ns, availRam, growRam, current);
         let hackThreads = getHackThreads(ns, availRam, hackRam, current);
@@ -50,7 +50,7 @@ export async function main(ns) {
       }
     }
     // Recompiles all lists
-    //masterHosts = await listAllHosts(ns, "home"); The masteHost list should never need to be recompiled
+    masterHosts = await listAllHosts(ns, "home");
     targets = getTargets(ns, masterHosts);
     hosts = getHosts(ns, masterHosts);
     await ns.sleep(waitTime)
@@ -97,8 +97,9 @@ export function getGrowThreads(ns, availRam, growRam, current) {
   let maxThreads = Math.floor(availRam / growRam)
   let serverMax = ns.getServerMaxMoney(current);
   let serverCurent = ns.getServerMoneyAvailable(current);
-  //let required = Math.ceil(ns.growthAnalyze(serverMax/serverCurent));
-  let required = Math.ceil(ns.growthAnalyze(current, Math.ceil(serverMax/serverCurent)))
+  if (serverCurent < 1)
+    serverCurent = 1;
+  let required = Math.ceil(ns.growthAnalyze(current, Math.ceil(serverMax / serverCurent)))
   //ns.tprint(current+" Max = "+ serverMax +" Current = "+serverCurent+" Mod = "+ Math.ceil(serverMax/serverCurent)+"("+Math.ceil(serverMax/serverCurent)*Math.ceil(serverCurent)+")");
   if (required > maxThreads) {
     return maxThreads;
@@ -109,10 +110,12 @@ export function getGrowThreads(ns, availRam, growRam, current) {
 
 /**@returns the number of threads needed to Hack to all money from a server
  * @returns max threads that can be used
+ * 
+ * @param {NS} ns
 */
 export function getHackThreads(ns, availRam, hackRam, current) {
   let maxThreads = Math.floor(availRam / hackRam)
-  let required = Math.ceil(ns.hackAnalyzeThreads(current, ns.getServerMoneyAvailable(current) / 2))
+  let required = Math.ceil(ns.hackAnalyzeThreads(current, ns.getServerMoneyAvailable(current) * .9))
   if (required > maxThreads) {
     return maxThreads;
   }
@@ -171,15 +174,24 @@ export function getTargets(ns, masterHosts) {
 
 export function getHosts(ns, masterHosts) {
   let hostList = [];
+  //Fill hostlist with servers.
   for (let i = 0; i < masterHosts.length; i++)
-    if (masterHosts[i].includes('Diavel'))//Change this string to reflect server names
+    if (masterHosts[i].includes('Diavel'))
       hostList.push(masterHosts[i]);
-  if (hostList.length < 25) {
-    hostList = []
-    let weakHostList = getWeakHosts(ns, masterHosts);
-    for (let i = 0; i < weakHostList.length; i++)
-      hostList.push(weakHostList[i]);
-  }
+  if (hostList.length >= 15)
+    return hostList;
+  
+  //fill hostlist with hacknets
+  for (let i = 0; i < masterHosts.length; i++)
+    if (masterHosts[i].includes('hacknet-server'))
+      hostList.push(masterHosts[i]);
+  if (hostList.length >= 15)
+    return hostList;
+  
+  let fillerHosts = getWeakHosts(ns, masterHosts);
+  for(let i=0;i<fillerHosts.length;i++)
+    hostList.push(fillerHosts[i]);
+
   return hostList;
 }
 
